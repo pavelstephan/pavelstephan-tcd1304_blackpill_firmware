@@ -1,6 +1,0 @@
-../Core/Src/ccd_data_layer.c:69:10:ccd_data_layer_calculate_crc16	2
-../Core/Src/ccd_data_layer.c:84:20:ccd_data_layer_init	1
-../Core/Src/ccd_data_layer.c:97:20:ccd_data_layer_process_readout	5
-../Core/Src/ccd_data_layer.c:136:10:ccd_data_layer_get_frame_count	1
-../Core/Src/ccd_data_layer.c:144:20:ccd_data_layer_validate_frame	6
-../Core/Src/ccd_data_layer.c:180:6:ccd_data_layer_reset_counter	1

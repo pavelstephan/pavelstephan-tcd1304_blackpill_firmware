@@ -28,7 +28,8 @@ typedef enum {
     CMD_OK = 0,
     CMD_ERROR_UNKNOWN = 1,
     CMD_ERROR_INVALID_PARAM = 2,
-    CMD_ERROR_NOT_IMPLEMENTED = 3
+    CMD_ERROR_NOT_IMPLEMENTED = 3,
+    CMD_ERROR_BUSY = 4  // ← ADDED for var int time
 } Command_Status_t;
 
 /* Acquisition state */

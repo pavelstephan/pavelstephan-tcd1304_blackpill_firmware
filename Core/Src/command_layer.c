@@ -22,6 +22,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "main.h"  // For htim5 access for variable int time
+
+/* External timer handle from main.c */
+extern TIM_HandleTypeDef htim5;  // ← ADD THIS LINE
 
 /* Private variables */
 static Acquisition_State_t acquisition_state = ACQ_STATE_IDLE;
@@ -193,22 +197,56 @@ void command_handle_stop(void)
 /**
  * @brief Set integration time (STUB - for future timer reconfiguration)
  */
+/**
+ * @brief Set integration time and reconfigure TIM5
+ */
+/**
+ * @brief Set integration time and reconfigure TIM5
+ */
 Command_Status_t command_handle_set_integration_time(uint32_t microseconds)
 {
-    // Validate range (reasonable limits)
+    // Must be stopped to change integration time
+    if (acquisition_state == ACQ_STATE_RUNNING) {
+        send_response("ERROR:MUST_STOP_FIRST\n");
+        return CMD_ERROR_BUSY;
+    }
+
+    // Validate range
     if (microseconds < 10 || microseconds > 100000) {
+        send_response("ERROR:RANGE_10_TO_100000\n");
         return CMD_ERROR_INVALID_PARAM;
     }
 
-    // For now, just store the value - actual timer reconfiguration will come later
+    // Stop TIM5 (SH)
+    HAL_TIM_PWM_Stop(&htim5, TIM_CHANNEL_3);
+
+    // Calculate new ARR: (84MHz × integration_time_us) / 1MHz - 1
+    uint32_t arr_value = (84 * microseconds) - 1;
+
+    // CCR stays constant at 4µs = 336 clocks
+    uint32_t ccr_value = 335;
+
+    // Update TIM5 registers
+    __HAL_TIM_SET_AUTORELOAD(&htim5, arr_value);
+    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3, ccr_value);
+
+    // Reset counter for clean start
+    __HAL_TIM_SET_COUNTER(&htim5, 0);
+
+    // Restart TIM5
+    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
+
+    // Update stored value
     integration_time_us = microseconds;
 
-    // TODO: In the future, this will reconfigure TIM2, TIM3, TIM4, TIM5
-    // to implement the new integration time
+    // Send success response
+    char response[64];
+    snprintf(response, sizeof(response), "OK:INT_TIME_SET:%lu\n",
+             (unsigned long)microseconds);
+    send_response(response);
 
-    return CMD_ERROR_NOT_IMPLEMENTED;  // Change to CMD_OK when implemented
+    return CMD_OK;
 }
-
 /**
  * @brief Send status information
  */
