@@ -1,0 +1,16 @@
+../Core/Src/usb_transport.c:30:6:usb_transport_init	1
+../Core/Src/usb_transport.c:45:6:usb_transport_process	3
+../Core/Src/usb_transport.c:56:10:usb_transport_available	1
+../Core/Src/usb_transport.c:64:6:usb_transport_read_byte	1
+../Core/Src/usb_transport.c:72:10:usb_transport_read	1
+../Core/Src/usb_transport.c:80:10:usb_transport_read_line	8
+../Core/Src/usb_transport.c:122:6:usb_transport_write_byte	2
+../Core/Src/usb_transport.c:138:10:usb_transport_write	2
+../Core/Src/usb_transport.c:154:10:usb_transport_write_string	1
+../Core/Src/usb_transport.c:162:6:usb_transport_send_direct	3
+../Core/Src/usb_transport.c:183:6:usb_transport_rx_callback	2
+../Core/Src/usb_transport.c:198:6:usb_transport_is_tx_busy	1
+../Core/Src/usb_transport.c:206:13:tx_flush	4
+../Core/Src/usb_transport.c:239:6:usb_transport_tx_complete_callback	1
+../Core/Src/usb_transport.c:247:6:usb_transport_get_stats	1
+../Core/Src/usb_transport.c:258:6:usb_transport_reset_stats	1
