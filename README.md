@@ -287,7 +287,7 @@ void command_handle_your_new_feature(void)
 
 else if (strcmp(clean_cmd, "YOUR_COMMAND") == 0) {
     command_handle_your_new_feature();
-
+}
 
 // Step 3 - Use it from python:
 
