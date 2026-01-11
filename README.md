@@ -275,19 +275,19 @@ ADDING NEW COMMANDS
 
 // Step 1 - Add new handler function (command_layer.c)
 void command_handle_your_new_feature(void)
-{
+
     // Do whatever you need
     some_setting = true;
     
     // Send response back
     send_response("OK:FEATURE_ENABLED\n");
-}
+
 
 //Step 2- Add to parser:
 
 else if (strcmp(clean_cmd, "YOUR_COMMAND") == 0) {
     command_handle_your_new_feature();
-}
+
 
 // Step 3 - Use it from python:
 
