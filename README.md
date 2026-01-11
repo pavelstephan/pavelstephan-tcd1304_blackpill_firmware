@@ -6,10 +6,6 @@ recent board (ordered from PCBWay from the link on his site).  That said, it sho
 with any control board, but you may need to invert the output in the receiving device/
 computer.
 
-Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
-and it should be completely OS intependent (ie, work with a control computer running
-any OS).  
-
 https://curiousscientist.tech/blog/tcd1304-linear-ccd-driving-the-ccd 
 
 This was becuase his design is super slick in many important ways, uses minimal parts very 
@@ -23,6 +19,9 @@ have any little issues I need to clean up, as many of those will be use-case spe
 really must be determined in my real-world spectrometer environment.  I will update if
 I encounter any issues worth mentioning or correcting.
 
+Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
+and it should be completely OS intependent (ie, work with a control computer running
+any OS).  
 
 My use-case is reflective uv-viz-nir spectrometry across essentially the complete spectral 
 range of the sensor, from roughly 390nm to about 1100nm, although that is probabily pushing 
