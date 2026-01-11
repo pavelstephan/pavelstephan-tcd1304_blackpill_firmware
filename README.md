@@ -111,6 +111,23 @@ PA0 - ICG
 PA2 - SH
 OS - USB
 
+IMPORTANT: The sensor is always reading continuously, with the USB output gated via the start/stop
+commands.  Thus, USB output STARTS IDLE:
+
+// Private variables
+static Acquisition_State_t acquisition_state = ACQ_STATE_IDLE;  // ← Starts IDLE!
+
+And sends to USB upon command:
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    // Only send if acquisition is enabled
+    if (command_layer_is_acquiring()) {  // ← Checks this!
+        // Frame wrapping and USB transmission
+        ccd_data_send_frame(...);
+    }
+}
+
 I have also included a bunch of test scriptsin python (in the /python folder) that can be used both 
 to test the firmware and its various elements, but also as useful scripts that can be ran if any of 
 those elements are changed or modified in the future.  Those should be self-explanitary and 
