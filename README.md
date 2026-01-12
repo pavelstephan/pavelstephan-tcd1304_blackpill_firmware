@@ -16,7 +16,11 @@ def invert_signal(pixels):
     return ADC_MAX_VALUE - pixels
 
 ... and applied globally to all pixel data (or you will have bespoke code and a lot of headached
-as soon as it's parsed, so all downstream code treats light=high
+as soon as it's parsed, so all downstream code treats light=high.  Many of the test scripts
+in the python file were written before adding the global invert function, and so their
+outputs may look wonky. Additionally, I added start/stop controls over USB output later,
+and so some scripts may need to have the USB start command send to the MCU to function 
+(THE DEFAULT USB OUTOUT STATE IS GATED OFF from about 011026.
 
 Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
 and it should be completely OS intependent (ie, work with a control computer running
