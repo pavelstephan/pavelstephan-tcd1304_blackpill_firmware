@@ -15,7 +15,7 @@ def invert_signal(pixels):
     """Invert CCD signal so light = high values, dark = low values"""
     return ADC_MAX_VALUE - pixels
 
-Applied globally to all pixel data (or you will have bespoke code and a lot of headached
+... and applied globally to all pixel data (or you will have bespoke code and a lot of headached
 as soon as it's parsed, so all downstream code treats light=high
 
 Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
