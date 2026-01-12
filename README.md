@@ -18,7 +18,10 @@ def invert_signal(pixels):
 ... and applied globally to all pixel data (or you will have bespoke code and a lot of headached
 as soon as it's parsed, so all downstream code treats light=high.  Many of the test scripts
 in the python file were written before adding the global invert function, and so their
-outputs may look wonky. Additionally, I added start/stop controls over USB output later,
+outputs may look wonky.  To change, take code to invert and any later adds from 
+python_control_v1.py (or whatever its version) as I will keep that current.
+
+Additionally, I added start/stop controls over USB output later,
 and so some scripts may need to have the USB start command send to the MCU to function 
 (THE DEFAULT USB OUTOUT STATE IS GATED OFF from about 011026.
 
