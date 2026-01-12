@@ -1,10 +1,26 @@
+
+(changelogs on the bottom of this page)
+
 In this repo you will complete firmware and a bunch of related files representing
 the primary elements of the firmware and ultimately, control code for the TCD1304 sensor
 controled by the an STM32F401CCU6 'blackpill' MCU.  Initially I made my own board, but
 I came across curiousscientist's blog and youtube channel and decided I would use his most
 recent board (ordered from PCBWay from the link on his site).  That said, it should work
 with any control board, but you may need to invert the output in the receiving device/
-computer.
+computer.  In other words (and this is important), the board I am using DOES NOT invert 
+(higher charge in pixel well equals 'darker' value).  This must be accomodated in 
+python or in the processing code, eg:
+
+def invert_signal(pixels):
+    """Invert CCD signal so light = high values, dark = low values"""
+    return ADC_MAX_VALUE - pixels
+
+Applied globally to all pixel data (or you will have bespoke code and a lot of headached
+as soon as it's parsed, so all downstream code treats light=high
+
+Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
+and it should be completely OS intependent (ie, work with a control computer running
+any OS).  
 
 https://curiousscientist.tech/blog/tcd1304-linear-ccd-driving-the-ccd 
 
@@ -19,9 +35,6 @@ have any little issues I need to clean up, as many of those will be use-case spe
 really must be determined in my real-world spectrometer environment.  I will update if
 I encounter any issues worth mentioning or correcting.
 
-Note the code was written using the STM Cube IDE and HAL libraries/functions (no RTOS), 
-and it should be completely OS intependent (ie, work with a control computer running
-any OS).  
 
 My use-case is reflective uv-viz-nir spectrometry across essentially the complete spectral 
 range of the sensor, from roughly 390nm to about 1100nm, although that is probabily pushing 
@@ -34,7 +47,7 @@ where required, and cheap but functional parts where not required.  Later, I may
 design, because it is unique but very powerful and precise for my use-case, and something
 others can probably improve further, which I welcome.
 
-Final housekeeping note: this readme any other readmes were written real-time while working through 
+Final housekeeping notes: this readme any other readmes were written real-time while working through 
 the project phases and so they have funtioned for me as both on-going code notes, but also, 
 I hope, they provide detailed descriptions or the firmare and python archtectures, its elements, 
 and some easy paths to modify, extend, or refine the re-usable pieces of the code (eg. the various 
@@ -42,7 +55,11 @@ layers of the comms stack, the ring buffer code, etc), which I tried to write an
 that those elements can be used in other projects, where applicable.  To be clear, I am not a developer, 
 and although the design/implimentation is my own, I used Claud extensively to crank out python 
 test scripts and to refince elements of the logic that we tricky for me to figure out or code.  
-It has become a truly remarkable platform (Claud), code-wise, and I will continue to use it extensivly.  
+It has become a truly remarkable platform (Claud), code-wise, and I will continue to use it extensivly.
+Finally, the sensor is super, um, sensitive.  That is, people shine lasers on this, which the 
+hardware is designed to accomodate, and thus int times like 10-20us, won't generate much signal
+in typical lighting environments (in the case of the non-inverting nature of this board, low
+light will look like saturation unless inverted in code).    
 
 About the firmware and software architecture
 
@@ -110,23 +127,6 @@ PA6 - Fm
 PA0 - ICG
 PA2 - SH
 OS - USB
-
-IMPORTANT: The sensor is always reading continuously, with the USB output gated via the start/stop
-commands.  Thus, USB output STARTS IDLE:
-
-// Private variables
-static Acquisition_State_t acquisition_state = ACQ_STATE_IDLE;  // ← Starts IDLE!
-
-And sends to USB upon command:
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-    // Only send if acquisition is enabled
-    if (command_layer_is_acquiring()) {  // ← Checks this!
-        // Frame wrapping and USB transmission
-        ccd_data_send_frame(...);
-    }
-}
 
 I have also included a bunch of test scriptsin python (in the /python folder) that can be used both 
 to test the firmware and its various elements, but also as useful scripts that can be ran if any of 
@@ -252,7 +252,79 @@ sensor is continuously reading per the timers established in the code, and only 
 │                                         │
 └─────────────────────────────────────────┘
 
-Command layer functioning, STATUS example:
+Command layer files: /Src/command_layer.c and /Inc/command_layer.h
+Code to call command layer in main: 
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
+#include "usbd_cdc_if.h"
+#include "usb_transport.h"  // ← ADDED for USB transport code
+#include "ccd_data_layer.h"  // ← ADDED for CCD frame management
+#include "command_layer.h"   // ← ADDED FOR COMMAND layer
+/* USER CODE END
+
+inits:
+// Initialize USB transport layer
+  usb_transport_init();
+  // Initialize CCD data layer
+  ccd_data_layer_init();
+  // Initialize command layer
+  command_layer_init();
+
+Snippet of treatment of command_layer in command_layer.c (in Src folder):
+
+/**
+ * @brief Process incoming commands from USB
+ *
+ * This function should be called repeatedly from the main loop.
+ * It reads bytes from the USB RX buffer and accumulates them until
+ * a newline is received, then parses and executes the command.
+ /
+void command_layer_process(void)
+{
+    // Read available bytes from RX ring buffer
+    while (usb_transport_available()) {
+        uint8_t byte;
+
+        if (!usb_transport_read_byte(&byte)) {
+            break;  // No more data
+        } ...
+
+
+Command implimentation snippet from command_layer.c
+
+/**
+ * @brief Parse and execute a command string
+ */
+static void parse_and_execute_command(const char* cmd)
+{
+    // Remove any trailing whitespace
+    char clean_cmd[CMD_BUFFER_SIZE];
+    strncpy(clean_cmd, cmd, CMD_BUFFER_SIZE - 1);
+    clean_cmd[CMD_BUFFER_SIZE - 1] = '\0';
+
+    // Trim trailing spaces/returns
+    int len = strlen(clean_cmd);
+    while (len > 0 && (clean_cmd[len-1] == ' ' || clean_cmd[len-1] == '\r')) {
+        clean_cmd[--len] = '\0';
+    }
+
+    // Parse commands
+    if (strcmp(clean_cmd, "START") == 0) {
+        command_handle_start();
+    }
+    else if (strcmp(clean_cmd, "STOP") == 0) {
+        command_handle_stop();
+    }
+    else if (strcmp(clean_cmd, "STATUS") == 0) {
+        command_handle_get_status();
+    }
+    else if (strncmp(clean_cmd, "SET_INT ...
+
+
+Command layer functioning workflow, STATUS example:
 
 Private state variables set up in command_layer.c, eg:
 // Private variables 
@@ -291,13 +363,13 @@ ADDING NEW COMMANDS
 
 // Step 1 - Add new handler function (command_layer.c)
 void command_handle_your_new_feature(void)
-
+{
     // Do whatever you need
     some_setting = true;
     
     // Send response back
     send_response("OK:FEATURE_ENABLED\n");
-
+}
 
 //Step 2- Add to parser:
 
@@ -317,3 +389,50 @@ Frame too large? Check USB_TX_BUFFER_SIZE
 Missing frames? Check frame counter gaps
 Bad checksums? Verify endianness in Python
 Wrong pixel count? Should always be 3694
+
+CHANGELOGS:
+
+0101 Changelog"
+- added prescaler to dynamically change int time and increate total int time range
+from earlier 10-100,0000us to 10us-10 SECONDS time ( 10 μs to 10 seconds (10,000,000 μs). 
+- Requires STOP first: Prevents timer changes during acquisition
+- Calculates frame time: Always 3694 × integration_time (reads all pixels)
+-- Uses prescalers intelligently
+-- ≤1000 μs: PSC=0 (84 MHz) for precision
+-- 1000 μs: PSC=83 (1 MHz) for simplicity
+-- Updates both timers: TIM5 (SH) and TIM2 (ICG) stay synchronized
+-- Provides feedback: Returns integration time, frame time, and FPS
+
+
+Intgrating pre-scalers in python:
+
+# Stop acquisition
+ser.write(b'STOP\n')
+response = ser.readline()
+print(response)  # "OK:STOPPED"
+
+# Set integration time to 1000 μs (1 ms)
+ser.write(b'SET_INT_TIME:1000\n')
+response = ser.readline()
+print(response)  # "OK:INT_TIME=1000us,FRAME_TIME=3694ms,FPS=0.2"
+
+'''
+ser.write(b'SET_INT_TIME:10\n')        # 10 μs (minimum)
+ser.write(b'SET_INT_TIME:100\n')       # 100 μs
+ser.write(b'SET_INT_TIME:1000\n')      # 1 ms (1,000 μs)
+ser.write(b'SET_INT_TIME:10000\n')     # 10 ms (10,000 μs)
+ser.write(b'SET_INT_TIME:100000\n')    # 100 ms (100,000 μs)
+ser.write(b'SET_INT_TIME:1000000\n')   # 1 second (1,000,000 μs)
+ser.write(b'SET_INT_TIME:10000000\n')  # 10 seconds (10,000,000 μs) - MAXIMUM
+'''
+
+# Check status
+ser.write(b'STATUS\n')
+response = ser.readline()
+print(response)  # "STATUS:IDLE,INT_TIME:1000us,FRAME_TIME:3694ms,FPS:0"
+
+# Start acquisition
+ser.write(b'START\n')
+response = ser.readline()
+print(response)  # "OK:STARTED"
+
